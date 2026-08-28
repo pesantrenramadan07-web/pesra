@@ -1,0 +1,146 @@
+{
+  "theme": "light",
+  "archetype": "ORGANIC & EARTHY",
+  "typography": {
+    "headings": "Manrope",
+    "body": "IBM Plex Sans",
+    "weights": {
+      "light": 300,
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "hierarchy": {
+      "h1": "text-3xl sm:text-4xl font-bold tracking-tight text-emerald-950",
+      "h2": "text-2xl sm:text-3xl font-semibold tracking-tight text-emerald-900",
+      "h3": "text-xl sm:text-2xl font-medium tracking-tight text-emerald-800",
+      "h4": "text-lg sm:text-xl font-medium text-emerald-800",
+      "body": "text-sm sm:text-base text-slate-600 leading-relaxed",
+      "small_label": "text-xs font-semibold uppercase tracking-[0.1em] text-slate-500"
+    },
+    "instructions": "Import these fonts via Google Fonts in index.css. Do NOT use Inter, Roboto, or Open Sans for headings. Apply `tracking-tight` to headings. Do not center-align body text or dense content."
+  },
+  "colors": {
+    "background": "#F9FAFB",
+    "surface": "#FFFFFF",
+    "primary": {
+      "DEFAULT": "#064E3B",
+      "foreground": "#FFFFFF",
+      "hover": "#047857"
+    },
+    "secondary": {
+      "DEFAULT": "#F1F5F9",
+      "foreground": "#0F172A",
+      "hover": "#E2E8F0"
+    },
+    "accent": {
+      "DEFAULT": "#D97706",
+      "foreground": "#FFFFFF",
+      "hover": "#B45309"
+    },
+    "status": {
+      "success": {
+        "bg": "#ECFDF5",
+        "text": "#065F46",
+        "border": "#A7F3D0",
+        "icon": "lucide-react/CheckCircle2"
+      },
+      "warning": {
+        "bg": "#FFFBEB",
+        "text": "#92400E",
+        "border": "#FDE68A",
+        "icon": "lucide-react/AlertTriangle"
+      },
+      "danger": {
+        "bg": "#FEF2F2",
+        "text": "#991B1B",
+        "border": "#FECACA",
+        "icon": "lucide-react/XCircle"
+      },
+      "info": {
+        "bg": "#F0F9FF",
+        "text": "#075985",
+        "border": "#BAE6FD",
+        "icon": "lucide-react/Info"
+      }
+    },
+    "text": {
+      "primary": "#0F172A",
+      "secondary": "#475569",
+      "disabled": "#94A3B8"
+    },
+    "border": "#E2E8F0"
+  },
+  "visual_enhancers": {
+    "borders": "1px solid #E2E8F0 (border-slate-200). Sharp or subtly rounded (max rounded-md / 6px). Avoid overly soft, pill-shaped UI elements for this admin context, except for specific buttons.",
+    "shadows": "Minimal ambient shadow for interactive elements. Default to flat surfaces with 1px borders. Use shadow-sm or shadow-md only for floating elements like dropdowns, modals, and the mobile navigation drawer.",
+    "glassmorphism": "Not recommended for this data-heavy admin panel. Use solid backgrounds.",
+    "icons": "lucide-react"
+  },
+  "spacing_and_layout": {
+    "grid_system": "High Density Grid (Mode B). Dense, functional spacing. Use tight gaps (gap-4 or gap-6) for dashboard metric cards, but maintain generous internal padding (p-4 to p-6) inside containers.",
+    "dashboard_grid": "Base grid-cols-1, md:grid-cols-2, lg:grid-cols-4. Summary metrics take col-span-1. Charts take col-span-2 or col-span-3.",
+    "navigation": "Desktop: Fixed Sidebar (w-64) + Main Content Area. Mobile: Sidebar hidden, triggered via Hamburger menu into a Navigation Drawer. Header must contain active period, Masehi & Hijri dates, and user profile.",
+    "alignment": "Left-align dense information, tables, and lists. Center align ONLY for empty states or small decorative components."
+  },
+  "components_rules": {
+    "cards": "Go mostly cardless or use sharp 1px borders with solid white background. Avoid deep drop shadows. Use `p-6` for internal padding.",
+    "buttons": "Slightly rounded (rounded-md), consistent interaction states. Primary CTA uses emerald-900, secondary uses slate-100.",
+    "tables": "Dense rows. Header text should be subtle uppercase (text-xs tracking-wider text-slate-500). Hover states on rows (hover:bg-slate-50). Provide pagination.",
+    "forms": "Use Shadcn forms. Inputs should have subtle focus rings (focus:ring-2 focus:ring-emerald-500). Left-align labels.",
+    "status_indicators": "CRITICAL: Status must NEVER rely on color alone. Always pair color with text and an icon. e.g., <div className='flex items-center gap-2 text-red-700 bg-red-50 p-2 border border-red-200'><XCircle size={16} /><span>Gagal</span></div>",
+    "evaluation_stars": "Teacher evaluation uses a 1-5 Star UI. Use the star icon from lucide-react. Unfilled: text-slate-300, Filled: text-amber-500. Add interactive hover states for filling the stars during evaluation.",
+    "toasts": "Use 'sonner' for notifications.",
+    "drawer": "Use Vaul or standard Shadcn Sheet/Drawer for Mobile Sidebar and drill-down details."
+  },
+  "motion": {
+    "hover": "Subtle opacity and slight transform (-translate-y-[1px]) for buttons and metric cards.",
+    "transitions": "DO NOT use `transition-all`. Specify transitions, e.g., `transition-colors duration-200` or `transition-transform duration-200`.",
+    "page_load": "Staggered fade-in (framer-motion) for dashboard metric cards."
+  },
+  "accessibility": {
+    "testing_attributes": "All interactive elements (buttons, links, form inputs, menus, table actions) MUST include a `data-testid` attribute (kebab-case, role-based).",
+    "contrast": "Ensure text over any colored background has a minimum 4.5:1 contrast ratio. Do not use fully transparent backgrounds where content sits behind."
+  },
+  "image_urls": {
+    "login_background": {
+      "url": "https://images.unsplash.com/photo-1602128110234-2d11c0aaadfe?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA0MTJ8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBtb3NxdWUlMjBtaW5pbWFsJTIwYXJjaGl0ZWN0dXJlfGVufDB8fHx8MTc4Nzg4Mzg3M3ww&ixlib=rb-4.1.0&q=85",
+      "description": "Minimalist white architecture representing clean, modern Islamic design. Use this as a split-screen background for the Login page with a black/30 overlay.",
+      "category": "backgrounds"
+    }
+  },
+  "GENERAL_UI_UX_DESIGN_GUIDELINES": [
+    "Prioritize operational information. Avoid clutter.",
+    "Language must be strictly Bahasa Indonesia across the UI.",
+    "Ensure both Masehi (Gregorian) and Hijriah (Islamic) dates are clearly visible in the top header.",
+    "Include empty, loading, and error states for all data tables and charts.",
+    "Use drill-down detail drawers (side panels) or modals instead of forcing users to a new page for quick details."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "You tend to converge toward generic, 'on distribution' outputs. In frontend design, this creates what users call the 'AI slop' aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight.",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "You MUST NOT apply universal transition. Eg: `transition: all`. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms.",
+    "You MUST NOT center align the app container, ie do not add `.App { text-align: center; }` in the css file. This disrupts the human natural reading flow of text.",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style.",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Prioritize using pre-existing components from src/components/ui when applicable.",
+    "Use `sonner` for toasts.",
+    "Missing categories (especially sponsor logos) = main agent will use placeholder text which is FORBIDDEN."
+  ],
+  "instructions_to_main_agent": {
+    "dashboard_specifics": {
+      "header": "Render App Name, Active Period, Tanggal Masehi & Hijriah, and User Profile. Must be sticky on top.",
+      "summary_cards": "Render Sekolah, Pengajar, Armada, Kehadiran, Monitoring, Dokumentasi as 'X/Y' or simple metrics.",
+      "sections": "Include 'Rencana Besok', 'Realisasi Hari Ini', 'Plan vs Realisasi' chart, and 'Perlu Perhatian' (Needs Attention) panel."
+    },
+    "workflows": {
+      "roster_upload": "Show preview with valid/invalid row report clearly color-coded (success/danger) with icons.",
+      "teacher_evaluation": "Implement the 1-5 star interactive UI component using Lucide-react stars."
+    },
+    "responsiveness": "Ensure Sidebar cleanly transforms to a navigation drawer on mobile viewports."
+  }
+}

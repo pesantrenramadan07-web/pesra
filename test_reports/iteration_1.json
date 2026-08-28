@@ -1,0 +1,42 @@
+{
+  "summary": "Iteration 1 foundation testing for SIMPESRA LIM: 24 pytest backend tests (auth, RBAC, data scope, IDOR, master CRUD, periods activation, users, audit, dashboard) all pass after a fix for an ObjectId serialisation bug in audit_logs / dashboard summary. Frontend Playwright E2E: admin login + dashboard cards + Master Sekolah create + Segera Hadir placeholder + koordinator role-based menu restrictions all pass.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/audit_logs and /api/dashboard/summary", "issue": "Previously returned 500 due to Motor's insert_one mutating the payload dict to inject _id (ObjectId), which was then written into audit_logs.new_value. When later returned via doc_out, the nested ObjectId broke FastAPI's jsonable_encoder. RCA + fix applied: routes_master._create now audits a copy without _id, and crud_base.doc_out now recursively converts nested ObjectId->str for defensive safety on any legacy rows."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "DialogContent (CrudPage)", "issue": "React a11y warning: 'Missing Description or aria-describedby for {DialogContent}'. Non-blocking but should be fixed for accessibility.", "selector": "DialogContent", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "(Optional) Add aria-describedby / DialogDescription to CrudPage's DialogContent to silence Radix a11y warnings.",
+    "(Optional) Periodically purge test-period rows created during pytest runs (prefix TEST_) if you don't want the period selector to show them by default."
+  ],
+  "critical_code_review_comments": [
+    "routes_master._create passed the just-inserted payload directly to log_audit. Because Motor mutates insert_one's input dict to add _id: ObjectId, every CREATE audit ended up with a raw ObjectId nested inside new_value, breaking any endpoint that serialises audit rows (audit_logs list, dashboard recent_activity). Fixed by stripping _id before audit.",
+    "crud_base.doc_out only stripped top-level _id; nested ObjectId values (e.g. in audit new_value / old_value) still leaked to JSON encoder. Hardened doc_out to recurse.",
+    "audit.py _sanitize does not deep-clean ObjectId either; recommend applying the same defensive recursion there for future safety.",
+    "CORSMiddleware sets allow_origins from FRONTEND_URL + localhost only, allow_credentials=True — good. But backend/.env still has CORS_ORIGINS='*' which is unused. Remove the dead env var to avoid confusion.",
+    "server.py uses deprecated @app.on_event; consider FastAPI lifespan handlers.",
+    "/api/files/{path:path} decodes JWT from ?auth= without checking type=access or token_version; a leaked refresh token would authenticate a file download. Minor hardening.",
+    "Login attempt lockout logic increments count on every failure but the check `attempt.count >= MAX_ATTEMPTS AND locked_until > now` means once lockout expires the counter is never reset until a successful login — subsequent single wrong attempt could immediately re-lock. Consider resetting count when lock window expires."
+  ],
+  "updated_files": [
+    "/app/backend/routes_master.py",
+    "/app/backend/crud_base.py",
+    "/app/backend/tests/backend_test.py"
+  ],
+  "success_rate": {"backend": "100% (24/24)", "frontend": "100% of critical flows (admin login, dashboard, master CRUD, koordinator RBAC)"},
+  "test_credentials": "Admin: pesantrenramadan07@gmail.com / Admin#2026 ; Demo: {ketua,dh,koordinator,pengajar,viewer}@simpesra.test / Test#2026 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Multiple TEST_-prefixed schools/teachers/vehicles/officers/DH/periods and one dynamically-created KOORDINATOR user were inserted by pytest runs. They remain in the DB (soft/active). No cleanup performed — safe because they're clearly prefixed.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend regression suite is at /app/backend/tests/backend_test.py (pytest, 24 tests). Run via: REACT_APP_BACKEND_URL=<public URL> python -m pytest backend/tests/backend_test.py -v. The suite creates TEST_ prefixed rows every run; safe but expected. Dashboard summary now correctly returns 200 for admin (previously 500 due to nested ObjectId in audit_logs — fixed). Frontend logout via user-menu-trigger dropdown was not fully asserted in Playwright because Radix portals the DropdownMenuContent; the button exists (Header.jsx line 84 data-testid=logout-btn) but the test needs to wait for the portal before querying.",
+  "rca of the issue": "GET /api/audit_logs and /api/dashboard/summary (admin) returned 500. Traceback: fastapi/encoders.py jsonable_encoder failed with \"'ObjectId' object is not iterable\". Root cause: routes_master._create called `await db[coll].insert_one(payload)` then passed the same `payload` dict as new_value to log_audit. Motor mutates the input dict to insert `_id: ObjectId(...)`, so every CREATE audit row on master data (schools, teachers, vehicles, DH, officers) stored a raw ObjectId under new_value._id. Later, `doc_out` only stripped the top-level _id, leaving the nested ObjectId to trip FastAPI's JSON encoder. Fix: (1) routes_master._create now filters _id out of the dict before auditing; (2) crud_base.doc_out recursively converts any nested ObjectId to str and drops nested _id so pre-existing corrupted audit rows also serialise cleanly. Reproduction: as admin, POST /api/schools then GET /api/audit_logs → 500 (pre-fix). After fix all 24 pytest cases pass."
+}

@@ -23,6 +23,12 @@ async def create_indexes():
     await db.audit_logs.create_index("timestamp")
     await db.schools.create_index("code")
     await db.periods.create_index("status")
+    await db.rosters.create_index("period_id")
+    await db.roster_rows.create_index("roster_id")
+    await db.roster_details.create_index("period_id")
+    await db.roster_details.create_index("roster_id")
+    await db.roster_details.create_index([("period_id", 1), ("school_id", 1), ("teacher_name", 1)])
+    await db.roster_rows.create_index([("roster_id", 1), ("validation_status", 1), ("row_number", 1)])
 
 
 async def seed_admin():

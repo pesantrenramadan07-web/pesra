@@ -21,6 +21,7 @@ import routes_auth
 import routes_master
 import routes_dashboard
 import routes_admin
+import routes_roster
 import seed
 
 logging.basicConfig(level=logging.INFO,
@@ -97,6 +98,7 @@ api_router.include_router(routes_auth.router)
 api_router.include_router(routes_master.router)
 api_router.include_router(routes_dashboard.router)
 api_router.include_router(routes_admin.router)
+api_router.include_router(routes_roster.router)
 
 app.include_router(api_router)
 

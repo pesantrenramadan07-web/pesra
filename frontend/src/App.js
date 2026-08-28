@@ -18,9 +18,10 @@ import Vehicles from "@/pages/Vehicles";
 import Users from "@/pages/Users";
 import Roles from "@/pages/Roles";
 import Audit from "@/pages/Audit";
+import Roster from "@/pages/Roster";
 import Placeholder from "@/pages/Placeholder";
 import {
-  ClipboardList, Route as RouteIcon, CalendarDays, Truck, CircleParking,
+  Route as RouteIcon, CalendarDays, Truck, CircleParking,
   UserCheck, ClipboardCheck, Images, FileBarChart2, Star,
 } from "lucide-react";
 
@@ -47,7 +48,7 @@ function App() {
               <Route path="/petugas" element={<ProtectedRoute perm="OFFICER_VIEW"><Officers /></ProtectedRoute>} />
               <Route path="/armada" element={<ProtectedRoute perm="VEHICLE_VIEW"><Vehicles /></ProtectedRoute>} />
 
-              <Route path="/roster" element={P("Roster", ClipboardList, "ROSTER_VIEW")} />
+              <Route path="/roster" element={<ProtectedRoute perm="ROSTER_VIEW"><Roster /></ProtectedRoute>} />
               <Route path="/penugasan" element={P("Penugasan", RouteIcon, "ASSIGNMENT_VIEW")} />
               <Route path="/jadwal" element={P("Jadwal", CalendarDays, "SCHEDULE_VIEW")} />
               <Route path="/pemberangkatan" element={P("Pemberangkatan", Truck, "DEPARTURE_VIEW")} />

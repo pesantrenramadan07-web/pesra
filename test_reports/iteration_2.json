@@ -1,0 +1,30 @@
+{
+  "summary": "Iteration 2 — Roster (Modul Roster) end-to-end testing. Backend: 14/14 pytest cases pass covering template download, upload+validate flow, validation error messages in Bahasa Indonesia, row filter, no-partial-import guard (409 when invalid>0), successful import with auto-created teachers + roster_details, re-import guard, cancel + cancel-imported-forbidden, versioning/history, RBAC denials for KOORDINATOR & PENGAJAR, and audit_logs entries for UPLOAD/IMPORT ROSTER. Frontend Playwright: admin can open Roster from sidebar, download template, upload valid xlsx -> preview with stat-total/valid/invalid/duplicate cards, filter tabs (Semua/Valid/Tidak Valid/Duplikat), confirm import -> imported-banner shown; upload with bad rows -> import-blocked-warning visible and confirm-import-btn hidden, cancel-roster-btn visible; koordinator has NO Roster nav item and direct /roster redirects to /. Foundation regression (24/24 iteration_1 backend tests) still passing.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_roster.py",
+    "/app/test_reports/pytest/roster_results.xml",
+    "/app/backend/tests/backend_test.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_roster._validate_rows preloads ALL roster_details for the period in memory (existing_pairs set). Fine for now but O(N) memory per upload — for very large historical periods, replace with a targeted find({'period_id':..., 'school_id': {'$in': [...]} , 'teacher_name': {'$in': [...]}}) or an index-backed count.",
+    "Add a compound index (period_id, school_id, teacher_name) on roster_details and (roster_id, validation_status, row_number) on roster_rows for scale; server startup does not appear to create these.",
+    "Upload endpoint reads the full file into memory before size check (data = await file.read(); then compares len(data) > 10MB). Consider streaming or Content-Length pre-check to avoid loading oversized uploads.",
+    "openpyxl.load_workbook(read_only=True) is used correctly, but the entire iter_rows result is materialised into a list — for huge sheets this could blow memory. Consider row-by-row streaming with a max-rows cap (e.g. 10000).",
+    "roster upload response returns the full doc (including uploaded_by, storage_path). storage_path is an internal object-storage path; safe to expose to admin only, but ensure no non-admin can reach GET /rosters/{id} (permission ROSTER_VIEW is broad — KETUA_UMUM/DH/VIEWER can see storage_path). Consider stripping storage_path from serialised output unless caller has ROSTER_UPLOAD.",
+    "import_roster auto-creates teachers by name-only lookup (db.teachers.find_one({'name': tname})). Case/whitespace variants create duplicate master pengajar rows. Normalise with a case-insensitive collation or store a normalised key.",
+    "cancel_roster updates status but does not set cancelled_by/cancelled_at fields — audit trail catches it, but a direct field would help UI.",
+    "roster_rows.insert_many stores raw_data verbatim (including 'Jenis Kelamin' / 'No HP' user strings) — no length cap. Trivial DoS via a wide Excel is unlikely because openpyxl handles cells, but consider truncating string values.",
+    "No @router.get('/{roster_id}/download') to fetch the original xlsx from object storage. Master spec asks storage; UI has no way to retrieve original file (only the template). Consider exposing an authenticated file-fetch endpoint."
+  ],
+  "updated_files": ["/app/backend/tests/test_roster.py"],
+  "success_rate": {"backend": "100% (14/14 roster + 24/24 foundation)", "frontend": "100% of critical roster flows"},
+  "test_credentials": "Admin pesantrenramadan07@gmail.com / Admin#2026; demo *@simpesra.test / Test#2026 (per /app/memory/test_credentials.md)",
+  "seed_data_creation": "Created several TEST_-prefixed rosters (valid + errors + cancelled + versioning) and roster_details on the currently-ACTIVE period (a TEST_Real Period from iter1). Auto-created teachers named 'TEST_Ustadz*' and 'TEST_UI Ustadz*' remain in master pengajar. Safe (all prefixed).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run roster tests: cd /app && python -m pytest backend/tests/test_roster.py -v -n 0 (must pass -n 0 because pytest.ini forces -n 2 --dist loadscope and this suite uses pytest.<attr> cross-test state). The suite picks the current ACTIVE period; if none exists it creates a TEST_Real Period and activates it. UI E2E: pre-build test xlsx files with openpyxl outside the browser env (browser python env lacks openpyxl); files at /tmp/roster_ui_valid.xlsx and /tmp/roster_ui_bad.xlsx pattern works.",
+  "rca of the issue": "No new bugs found in the Roster module. All flows behave per spec."
+}

@@ -12,6 +12,13 @@ const MAP = {
   SUCCESS: { label: "Sukses", cls: "bg-emerald-50 text-emerald-700 border-emerald-200", Icon: CheckCircle2 },
   WARNING: { label: "Perhatian", cls: "bg-amber-50 text-amber-700 border-amber-200", Icon: AlertTriangle },
   DANGER: { label: "Bahaya", cls: "bg-red-50 text-red-700 border-red-200", Icon: XCircle },
+  UPLOADED: { label: "Diunggah", cls: "bg-slate-100 text-slate-600 border-slate-200", Icon: Circle },
+  VALIDATED: { label: "Tervalidasi", cls: "bg-sky-50 text-sky-700 border-sky-200", Icon: Info },
+  IMPORTED: { label: "Terimpor", cls: "bg-emerald-50 text-emerald-700 border-emerald-200", Icon: CheckCircle2 },
+  CANCELLED: { label: "Dibatalkan", cls: "bg-slate-100 text-slate-500 border-slate-200", Icon: XCircle },
+  VALID: { label: "Valid", cls: "bg-emerald-50 text-emerald-700 border-emerald-200", Icon: CheckCircle2 },
+  INVALID: { label: "Tidak Valid", cls: "bg-red-50 text-red-700 border-red-200", Icon: XCircle },
+  DUPLICATE: { label: "Duplikat", cls: "bg-amber-50 text-amber-700 border-amber-200", Icon: AlertTriangle },
 };
 
 export default function StatusBadge({ value, label, tone }) {

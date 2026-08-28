@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usePeriod } from "@/context/PeriodContext";
 import { formatMasehi, formatHijri } from "@/lib/dates";
 import { LoadingState, ErrorState } from "@/components/PageState";
+import StatusBadge from "@/components/StatusBadge";
 import {
   School, GraduationCap, Bus, Users2, UserCog, CalendarClock, Sunrise,
   AlertTriangle, Activity, CheckCircle2, Moon, Info,
@@ -115,9 +116,30 @@ export default function Dashboard() {
             <Sunrise size={18} className="text-amber-600" />
             <h2 className="font-heading text-lg font-semibold text-emerald-950">Rencana Besok</h2>
           </div>
-          {data.rencana_besok?.available ? null : (
-            <div className="rounded-md bg-slate-50 border border-slate-100 p-4 text-sm text-slate-500">
-              Belum ada rencana kegiatan. Data rencana berasal dari <strong>Jadwal</strong> & <strong>Penugasan</strong> — modul operasional akan tersedia pada iterasi berikutnya.
+          {data.rencana_besok?.available ? (
+            <div data-testid="rencana-besok-list">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="rounded-md bg-amber-50 border border-amber-100 px-3 py-2 text-center">
+                  <p className="font-heading text-2xl font-bold text-amber-700">{data.rencana_besok.schools}</p>
+                  <p className="text-[11px] text-slate-500">Sekolah</p>
+                </div>
+                <p className="text-xs text-slate-500">Rencana untuk {new Date(data.rencana_besok.date).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" })}</p>
+              </div>
+              <ul className="divide-y divide-slate-100 border border-slate-100 rounded-md">
+                {data.rencana_besok.items.map((it, i) => (
+                  <li key={i} className="flex items-center justify-between px-3 py-2.5 text-sm" data-testid={`rencana-item-${i}`}>
+                    <span className="text-slate-700 font-medium">{it.school_name}</span>
+                    <span className="flex items-center gap-3">
+                      <span className="text-xs text-slate-500">{it.start_time}–{it.end_time}</span>
+                      <StatusBadge value={it.status} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="rounded-md bg-slate-50 border border-slate-100 p-4 text-sm text-slate-500" data-testid="rencana-besok-empty">
+              Belum ada jadwal untuk besok. Tambahkan data pada modul <strong>Jadwal</strong> untuk mengisi Rencana Besok.
             </div>
           )}
         </section>
@@ -140,7 +162,7 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-          <p className="text-xs text-slate-400 mt-3">Angka realisasi dihitung otomatis dari data operasional (pemberangkatan & kehadiran).</p>
+          <p className="text-xs text-slate-400 mt-3">Angka realisasi sekolah dihitung otomatis dari status Jadwal hari ini (ONGOING/COMPLETED). Pengajar & armada menyusul pada modul operasional berikutnya.</p>
         </section>
       </div>
 

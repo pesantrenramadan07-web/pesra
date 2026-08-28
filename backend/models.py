@@ -90,6 +90,16 @@ class VehicleIn(BaseModel):
     notes: Optional[str] = ""
 
 
+class ScheduleIn(BaseModel):
+    period_id: str
+    school_id: str
+    date: str  # YYYY-MM-DD
+    start_time: Optional[str] = ""
+    end_time: Optional[str] = ""
+    status: str = "PLANNED"
+    notes: Optional[str] = ""
+
+
 # ------------- Auth payloads -------------
 
 class LoginIn(BaseModel):

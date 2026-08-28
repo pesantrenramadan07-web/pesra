@@ -26,7 +26,7 @@ export const NAV = [
     items: [
       { label: "Roster", path: "/roster", icon: ClipboardList, perm: "ROSTER_VIEW" },
       { label: "Penugasan", path: "/penugasan", icon: Route, perm: "ASSIGNMENT_VIEW", soon: true },
-      { label: "Jadwal", path: "/jadwal", icon: CalendarDays, perm: "SCHEDULE_VIEW", soon: true },
+      { label: "Jadwal", path: "/jadwal", icon: CalendarDays, perm: "SCHEDULE_VIEW" },
       { label: "Pemberangkatan", path: "/pemberangkatan", icon: Truck, perm: "DEPARTURE_VIEW", soon: true },
       { label: "Penjemputan", path: "/penjemputan", icon: CircleParking, perm: "PICKUP_VIEW", soon: true },
       { label: "Kehadiran", path: "/kehadiran", icon: UserCheck, perm: "ATTENDANCE_VIEW", soon: true },

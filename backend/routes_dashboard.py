@@ -1,4 +1,5 @@
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
+from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, Query
 from bson import ObjectId
 
@@ -7,6 +8,8 @@ from crud_base import doc_out, is_oid
 from security import require_permission, get_current_user, user_school_scope
 
 router = APIRouter(prefix="/dashboard")
+
+JKT = ZoneInfo("Asia/Jakarta")
 
 
 async def _resolve_period(period_id: str = None):
@@ -24,10 +27,10 @@ async def summary(period_id: str = Query(default=None), the_date: str = Query(de
     period = await _resolve_period(period_id)
 
     try:
-        d = datetime.fromisoformat(the_date).date() if the_date else datetime.now(timezone.utc).date()
+        d = datetime.fromisoformat(the_date).date() if the_date else datetime.now(JKT).date()
     except Exception:
-        d = datetime.now(timezone.utc).date()
-    is_ahad = d.weekday() == 6  # Sunday
+        d = datetime.now(JKT).date()
+    is_ahad = d.weekday() == 6  # Sunday (Ahad)
 
     scope = user_school_scope(user)
     school_query: dict = {"status": "ACTIVE"}
@@ -39,6 +42,42 @@ async def summary(period_id: str = Query(default=None), the_date: str = Query(de
     vehicles_count = await db.vehicles.count_documents({"status": "ACTIVE"})
     dh_count = await db.daily_board_members.count_documents({"status": "ACTIVE"})
     officers_count = await db.officers.count_documents({"status": "ACTIVE"})
+
+    # ---- schedule-driven operational data (period + scope) ----
+    scope_ids = [ObjectId(s) for s in scope if is_oid(s)] if scope is not None else None
+    sched_base = {}
+    if period:
+        sched_base["period_id"] = period["id"]
+    if scope is not None:
+        sched_base["school_id"] = {"$in": [str(x) for x in scope_ids]}
+
+    today_str = d.isoformat()
+    tomorrow_str = (d + timedelta(days=1)).isoformat()
+
+    async def _fetch(day):
+        q = {**sched_base, "date": day, "status": {"$ne": "CANCELLED"}}
+        return [doc_out(x) async for x in db.schedules.find(q).sort("start_time", 1)]
+
+    today_sched = await _fetch(today_str) if period else []
+    tomorrow_sched = await _fetch(tomorrow_str) if period else []
+
+    started = [s for s in today_sched if s.get("status") in ("ONGOING", "COMPLETED")]
+    today_total = len(today_sched)
+    unconfirmed_today = [s for s in today_sched if s.get("status") == "PLANNED"]
+
+    rencana_items = [
+        {"school_name": s.get("school_name"), "date": s.get("date"),
+         "start_time": s.get("start_time"), "end_time": s.get("end_time"),
+         "status": s.get("status")}
+        for s in tomorrow_sched
+    ]
+
+    perlu_perhatian = []
+    if not is_ahad and len(unconfirmed_today) > 0:
+        perlu_perhatian.append({
+            "type": "SCHEDULE_UNCONFIRMED",
+            "message": f"{len(unconfirmed_today)} jadwal hari ini belum dikonfirmasi",
+        })
 
     # Recent activity (audit) - only for users who can view audit
     recent = []
@@ -60,18 +99,24 @@ async def summary(period_id: str = Query(default=None), the_date: str = Query(de
             "officers": {"label": "Petugas", "value": officers_count},
         },
         "realisasi": {
-            "schools_started": 0, "schools_total": schools_count,
-            "teachers_departed": 0, "teachers_total": teachers_count,
-            "vehicles_departed": 0, "vehicles_total": vehicles_count,
+            "schools_started": len(started), "schools_total": today_total,
+            "teachers_departed": 0, "teachers_total": 0,
+            "vehicles_departed": 0, "vehicles_total": 0,
             "present": 0, "absent": 0, "replaced": 0,
             "monitoring_submitted": 0, "documentation_complete": 0,
         },
         "rencana_besok": {
-            "schools": 0, "teachers": 0, "vehicles": 0, "items": [],
-            "available": False,
+            "date": tomorrow_str,
+            "schools": len(tomorrow_sched),
+            "teachers": 0, "vehicles": 0,
+            "items": rencana_items,
+            "available": len(tomorrow_sched) > 0,
         },
-        "plan_vs_realization": [],
-        "perlu_perhatian": [],
+        "plan_vs_realization": [
+            {"label": "Sekolah", "planned": today_total, "actual": len(started),
+             "diff": len(started) - today_total},
+        ] if period else [],
+        "perlu_perhatian": perlu_perhatian,
         "recent_activity": recent,
-        "operational_ready": False,
+        "operational_ready": bool(period),
     }

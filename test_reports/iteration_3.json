@@ -1,0 +1,45 @@
+{
+  "summary": "Iteration 3 — Schedule (Jadwal) module. Backend: 14/14 new pytest cases pass (CRUD, period immutability on update, delete-cancels, duplicate protection 409, status workflow with transition guards PLANNED→COMPLETED=409 and full PLANNED→CONFIRMED→ONGOING→COMPLETED with COMPLETED terminal, schedule_history entries, koordinator data-scope list + IDOR 403, RBAC 403 for koordinator POST/status, audit_logs SCHEDULE entries, dashboard schedule-driven values incl. Rencana Besok items list, Realisasi schools_started/total, plan_vs_realization Sekolah row, and delta after promoting CONFIRMED→ONGOING). Regression: 24/24 foundation + 14/14 roster still pass. Frontend E2E: admin dashboard on DEMO period shows Rencana Besok list with 4 items and statuses (CONFIRMED/PLANNED), Realisasi Sekolah 3/3 computed from schedules; Jadwal page lists 14 schedules, add-Jadwal-btn opens dialog with all required fields (field-school_id/date/status/start_time/end_time/save-btn) and 14 sched-status quick-action buttons render. Koordinator sees Jadwal in sidebar but cannot see add-Sekolah-btn or add-Jadwal-btn (RBAC correct).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Dashboard.jsx", "issue": "StatusBadge was referenced (line 133 in Rencana Besok list) without being imported → ReferenceError crashes the entire dashboard as soon as any tomorrow schedule exists. FIXED by testing agent (added `import StatusBadge from '@/components/StatusBadge'`).", "selector": "[data-testid='rencana-besok-list']", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "Koordinator → Jadwal page", "issue": "PeriodContext only fetches periods when user has PERIOD_VIEW; KOORDINATOR lacks PERIOD_VIEW so activePeriod stays null. Header shows 'Tidak ada periode' and Jadwal page renders the [data-testid=no-period-warning] instead of the schedule list. Consequence: koordinator (and any scoped user w/o PERIOD_VIEW) cannot browse/view schedules in UI even though the backend correctly returns their 3 scoped seed schedules. This violates the spec: 'koordinator ... sees Jadwal but only its schools\\' schedules'.", "affected_selectors": ["[data-testid='no-period-warning']", "header period combobox"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_schedules.py",
+    "/app/test_reports/pytest/schedule_results.xml",
+    "/app/backend/tests/backend_test.py",
+    "/app/backend/tests/test_roster.py"
+  ],
+  "action_items": [
+    "Allow non-PERIOD_VIEW roles (KOORDINATOR/PENGAJAR/DH) to read at least period id/name/status so PeriodContext can populate activePeriod (either add a public /api/periods/summary endpoint, or grant PERIOD_VIEW read to all authenticated roles, or auto-derive activePeriod from schedule scope). Without this, Jadwal + Dashboard schedule sections are dead for scoped users.",
+    "Consider granting KOORDINATOR PERIOD_VIEW (view-only) since periods are metadata anyway — simplest fix."
+  ],
+  "critical_code_review_comments": [
+    "routes_schedule.set_status(): allows status equal to current (no-op) but still writes schedule_history and audit entries — noisy history for repeated status clicks with same value; guard with `if status == cur: return {...}` before insert_one.",
+    "routes_schedule.update_schedule() forces `period_id = old['period_id']` (correct) but does not similarly guard the date-change from creating a duplicate: an admin can PUT a schedule to the same period+school+date as another existing non-cancelled schedule, bypassing the create-time 409 check. Add the same duplicate lookup in update_schedule.",
+    "routes_schedule.cancel_schedule() (DELETE) does not check current status; deleting an already-CANCELLED or COMPLETED schedule silently overwrites to CANCELLED. Enforce TRANSITIONS or refuse when status in ('COMPLETED','CANCELLED').",
+    "routes_dashboard.summary() uses server-side `datetime.now(timezone.utc).date()` for today/tomorrow — this is a subtle correctness issue for a Jakarta-timezone product; today at 20:00 WIB is already tomorrow UTC, so Rencana Besok/Realisasi can flip a day early. Consider Asia/Jakarta tz (or accept `the_date` from client's local date consistently).",
+    "routes_dashboard.summary(): when `period` is None the fields `is_test_mode`, `plan_vs_realization`, `rencana_besok.items` degrade differently (list vs {}); make shape consistent so frontend never crashes on missing period.",
+    "Dashboard.jsx originally referenced `<StatusBadge value={...}>` without import — no lint / no CI catch. Recommend enabling eslint rule `no-undef` on JSX identifiers or adding a pre-commit lint gate; this exact class of bug will keep recurring.",
+    "PeriodContext.jsx couples 'has periods' to 'has PERIOD_VIEW', which is architecturally wrong: many operational modules (Jadwal, Roster, future Kehadiran) need to know the active period regardless of admin permissions. Expose a minimal periods reader for all authenticated users.",
+    "routes_schedule.list_schedules(): search filters by school_name regex only — coordinators searching by school code (SMAN1) get nothing. Also missing pagination-metadata `pages`; already returns total/page/limit which is fine.",
+    "STATUSES/TRANSITIONS map is duplicated between backend (routes_schedule.py) and frontend (Schedules.jsx). Move to a shared config or expose via GET /api/schedules/meta to prevent drift."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_schedules.py (new — 14 tests)",
+    "/app/frontend/src/pages/Dashboard.jsx (fixed missing StatusBadge import)"
+  ],
+  "success_rate": {"backend": "100% (14/14 schedule + 24/24 foundation + 14/14 roster = 52/52)", "frontend": "Admin flows 100%; Koordinator UI blocked by PeriodContext coupling (backend scope verified 100% via tests)."},
+  "test_credentials": "Admin pesantrenramadan07@gmail.com / Admin#2026; koordinator@simpesra.test / Test#2026 (all demo users per /app/memory/test_credentials.md).",
+  "seed_data_creation": "Backend tests created several TEST_-prefixed schedules on the demo/is_test period across future dates and promoted one seeded today-CONFIRMED schedule to ONGOING. Idempotent; safe to leave. schedule_history rows created accordingly.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run schedule tests: cd /app && REACT_APP_BACKEND_URL=https://pesantren-ramadan.preview.emergentagent.com python -m pytest backend/tests/test_schedules.py -v -n 0 (must be -n 0 because tests share module-scope fixtures and mutate seed status). Full regression: pytest backend/tests -n 0. The demo/is_test period holds the seed schedules (today+tomorrow). Note that TestDashboardScheduleDriven.test_status_change_affects_realisasi consumes one CONFIRMED today schedule per run; if you re-run without reseeding it may skip. To reset seed schedules, drop db.schedules and restart backend.",
+  "rca of the issue": "Dashboard StatusBadge crash: `import StatusBadge` was omitted in Dashboard.jsx; the reference only executes when rencana_besok.available is true (i.e. tomorrow schedules exist), which is why the empty-state (no schedules) accidentally passed manual smoke testing. Repro: login as admin, switch header period to the '(DEMO/TEST)' period, dashboard throws ReferenceError and shows blank/react error. Mitigation applied: added `import StatusBadge from '@/components/StatusBadge'` in /app/frontend/src/pages/Dashboard.jsx; verified live — dashboard now renders 4 rencana-item-* rows with badges (CONFIRMED / PLANNED) correctly."
+}

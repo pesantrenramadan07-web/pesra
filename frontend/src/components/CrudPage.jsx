@@ -27,7 +27,7 @@ import { Plus, Search, Pencil, Archive, Loader2 } from "lucide-react";
 export default function CrudPage({
   title, subtitle, icon, endpoint, entityName,
   columns, formFields, defaults = {}, searchPlaceholder = "Cari...",
-  canCreate, canEdit, canArchive, extraRowActions,
+  canCreate, canEdit, canArchive, extraRowActions, transformSubmit,
 }) {
   const [rows, setRows] = useState([]);
   const [status, setStatus] = useState("loading"); // loading|ok|error|empty
@@ -75,8 +75,9 @@ export default function CrudPage({
     }
     setSaving(true);
     try {
-      if (editing) await api.put(`${endpoint}/${editing.id}`, form);
-      else await api.post(endpoint, form);
+      const body = transformSubmit ? transformSubmit(form, editing) : form;
+      if (editing) await api.put(`${endpoint}/${editing.id}`, body);
+      else await api.post(endpoint, body);
       toast.success(editing ? `${entityName} berhasil diperbarui.` : `${entityName} berhasil ditambahkan.`);
       setDialogOpen(false);
       load();
@@ -220,7 +221,7 @@ export default function CrudPage({
                   <MultiSelect options={fl.options || []} value={form[fl.name] || []} onChange={(v) => setField(fl.name, v)} placeholder={`Pilih ${fl.label}`} testid={`field-${fl.name}`} />
                 ) : (
                   <Input
-                    type={fl.type === "number" ? "number" : fl.type === "password" ? "password" : fl.type === "date" ? "date" : "text"}
+                    type={fl.type === "number" ? "number" : fl.type === "password" ? "password" : fl.type === "date" ? "date" : fl.type === "time" ? "time" : "text"}
                     value={form[fl.name] ?? ""}
                     onChange={(e) => setField(fl.name, fl.type === "number" ? Number(e.target.value) : e.target.value)}
                     placeholder={fl.placeholder}

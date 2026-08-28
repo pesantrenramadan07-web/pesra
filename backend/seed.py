@@ -29,6 +29,9 @@ async def create_indexes():
     await db.roster_details.create_index("roster_id")
     await db.roster_details.create_index([("period_id", 1), ("school_id", 1), ("teacher_name", 1)])
     await db.roster_rows.create_index([("roster_id", 1), ("validation_status", 1), ("row_number", 1)])
+    await db.schedules.create_index([("period_id", 1), ("date", 1), ("school_id", 1)])
+    await db.schedules.create_index("status")
+    await db.schedule_history.create_index("schedule_id")
 
 
 async def seed_admin():
@@ -170,4 +173,39 @@ async def run_seed():
     await create_indexes()
     await seed_admin()
     await seed_demo()
+    await seed_schedules()
     await write_test_credentials()
+
+
+async def seed_schedules():
+    """Idempotent demo schedules for the demo/test period (today + tomorrow)."""
+    from datetime import date, timedelta
+    if await db.schedules.count_documents({}) > 0:
+        return
+    period = await db.periods.find_one({"is_test": True}) or await db.periods.find_one({})
+    if not period:
+        return
+    period_id = str(period["_id"])
+    schools = [s async for s in db.schools.find({"status": "ACTIVE"})]
+    if not schools:
+        return
+    today = date.today()
+    tomorrow = today + timedelta(days=1)
+
+    def mk(school, d, status):
+        return {
+            "period_id": period_id, "period_name": period.get("name"),
+            "school_id": str(school["_id"]), "school_name": school.get("name"),
+            "date": d.isoformat(), "start_time": "07:00", "end_time": "12:00",
+            "status": status, "notes": "Jadwal DEMO", "created_at": _now(), "updated_at": _now(),
+        }
+
+    docs = []
+    # today: some ongoing/confirmed
+    for i, s in enumerate(schools[:3]):
+        docs.append(mk(s, today, "ONGOING" if i < 2 else "CONFIRMED"))
+    # tomorrow: planned/confirmed across more schools
+    for i, s in enumerate(schools[:4]):
+        docs.append(mk(s, tomorrow, "CONFIRMED" if i < 2 else "PLANNED"))
+    if docs:
+        await db.schedules.insert_many(docs)

@@ -99,6 +99,18 @@ async def active_period(user: dict = Depends(get_current_user)):
     return doc_out(doc) if doc else None
 
 
+@router.get("/periods/options")
+async def period_options(user: dict = Depends(get_current_user)):
+    """Lightweight period list for ALL authenticated users (period context/selector).
+    Not gated by PERIOD_VIEW so scoped roles (Koordinator/Pengajar/DH) can operate
+    period-bound modules like Jadwal."""
+    cursor = db.periods.find({}).sort("start_date", -1)
+    return [{
+        "id": str(p["_id"]), "name": p.get("name"), "status": p.get("status"),
+        "is_test": bool(p.get("is_test")), "hijri_year": p.get("hijri_year"),
+    } async for p in cursor]
+
+
 @router.get("/periods/{item_id}", dependencies=[Depends(require_permission("PERIOD_VIEW"))])
 async def get_period(item_id: str):
     doc = await db.periods.find_one({"_id": oid(item_id)})

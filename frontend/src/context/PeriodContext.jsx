@@ -11,8 +11,9 @@ export function PeriodProvider({ children }) {
 
   const load = async () => {
     try {
-      const { data } = await api.get("/periods", { params: { limit: 100 } });
-      const items = data.items || [];
+      // /periods/options is available to ALL authenticated users (not gated by PERIOD_VIEW)
+      const { data } = await api.get("/periods/options");
+      const items = data || [];
       setPeriods(items);
       const active = items.find((p) => p.status === "ACTIVE" && !p.is_test);
       setActivePeriod((cur) => cur || active || items[0] || null);
@@ -22,7 +23,7 @@ export function PeriodProvider({ children }) {
   };
 
   useEffect(() => {
-    if (user && user.permissions?.includes("PERIOD_VIEW")) load();
+    if (user) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 

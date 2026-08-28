@@ -1,0 +1,27 @@
+{
+  "summary": "Frontend E2E verification of two iteration_3 fixes for SIMPESRA LIM Jadwal module. Both fixes PASS. FIX #1 (Dashboard.jsx StatusBadge import): after switching admin's period to 'Pesantren Ramadan 1447 H (DEMO/TEST)', Dashboard renders without crash and [data-testid=rencana-besok-list] shows 4 items (Sabtu, 29 Agustus): SMAN 1 Kediri/CONFIRMED, SMPN 3 Kediri/CONFIRMED, MTsN 2 Kediri/PLANNED, SMAN 2 Kediri/PLANNED — each with a StatusBadge; Realisasi Hari Ini Sekolah = 3/3 (matches 3 ONGOING today). FIX #2 (PeriodContext scoped roles): koordinator@simpesra.test login shows a populated period selector (NOT 'Tidak ada periode'), Jadwal page lists 6 schedules scoped to koordinator's 2 schools (SMAN 1 Kediri + SMPN 3 Kediri), no [data-testid=no-period-warning], Dashboard renders scoped stats (2 Sekolah). GET /api/periods/options returns 200 for koordinator with id/name/status/is_test. RBAC verified: koordinator has NO [data-testid=add-Jadwal-btn]; admin has the button and Tambah Jadwal dialog opens; admin sees 14 [data-testid=sched-status-*] dropdowns. Sidebar role menus correct (admin sees Administrasi/Manajemen User/Role & Permission; koordinator does not).",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Tambah Jadwal dialog", "issues": ["Uses browser-native <input type=date> (mm/dd/yyyy) instead of the shadcn Calendar/Popover component — inconsistent with the rest of the design system and locale (ID users expect dd/mm/yyyy)."]}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_4.json"],
+  "action_items": [
+    "(Optional/minor) Replace native date input in Tambah Jadwal dialog with the shadcn Calendar/Popover to match design system and Indonesian date format.",
+    "(Not a bug per user note, but heads-up) DB is NOT actually reduced to a single demo period as the request stated: /api/periods/options returned 5 periods (Pesantren Ramadan 1447 H DEMO/TEST + 4 TEST_ leftovers). PeriodContext defaults activePeriod to the first non-test ACTIVE period (TEST_Real Period B 8c44) rather than the DEMO/TEST one for BOTH admin and koordinator — the request expected the default to be the DEMO period. Behavior is likely correct (prefer real ACTIVE over TESTING), but the request's assumption doesn't hold with the current data. Consider cleanup of TEST_ periods or persisting user's last selected period."
+  ],
+  "critical_code_review_comments": [
+    "PeriodContext does not persist activePeriod across page reloads (no localStorage). After switching the period and doing a hard reload the selector resets to the API default, which can confuse users on the Dashboard."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "not-tested (per request)", "frontend": "100%" },
+  "test_credentials": "Admin: pesantrenramadan07@gmail.com / Admin#2026 ; Koordinator: koordinator@simpesra.test / Test#2026",
+  "seed_data_creation": "None created during this iteration.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Both fixes are verified. If retesting: admin's default period after login is 'TEST_Real Period B 8c44' (ACTIVE), NOT the DEMO one — you MUST switch the period via the Radix Select [data-testid=period-selector] to 'Pesantren Ramadan 1447 H (DEMO/TEST)' to see rencana-besok-list populated. Radix Select is a <button role=combobox> — do not use Playwright select_option; use click on the trigger then click page.get_by_role('option', name=...). PeriodContext does not persist across page reloads. Data available in DEMO period: 3 today (ONGOING) + 4 tomorrow schedules (2 CONFIRMED + 2 PLANNED). Koordinator scope = 2 schools (SMAN 1 Kediri, SMPN 3 Kediri), 6 schedules visible.",
+  "rca of the issue": "N/A — both reported iteration_3 fixes work as intended."
+}
